@@ -1,0 +1,18 @@
+# ==========================================
+# 核心主配置 (总闸)
+# ==========================================
+server:
+  port: 8080 # 定义当前服务的端口号
+
+spring:
+  application:
+    name: submodule-1 # 定义微服务名称 (注册到 Nacos 时要用)
+
+  profiles:
+    # 【核心配置】组合其他子配置文件
+    #Spring Boot 默认的命名规则，它会寻找名为 application-{name}.yml 的文件
+    # 只要写 datasource，SpringBoot 就会自动去寻找 application-datasource.yml 并合并进来
+    include:
+      - datasource
+      - jwt
+      - weblog
