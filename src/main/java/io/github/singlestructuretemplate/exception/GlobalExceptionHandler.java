@@ -14,8 +14,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)// Exception 是所有异常的父类，任何报错都会被这个方法拦截
     public Result<?> handleException(Exception e) {
         // 使用标准的日志输出，记录完整的堆栈信息
-        log.error("系统发生未捕获异常: ", e);
-        // 返回给前端的提示
+        log.error("系统发生未捕获异常: {}",e.getMessage(), e);
+        // 可能会暴露内部结构，待优化
         String message = StringUtils.hasLength(e.getMessage()) ? e.getMessage() : "服务器开小差了，请稍后再试";
         return Result.error(message);
     }

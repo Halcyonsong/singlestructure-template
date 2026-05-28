@@ -1,5 +1,7 @@
 package io.github.singlestructuretemplate.pojo;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 /**
@@ -11,8 +13,8 @@ import lombok.Data;
  */
 @Data /*一键生成Javabean*/
 public class ExampleEntity {
-    //对应表格
-    private Long id;       // 主键 ID
-    private String name;   // 姓名
-    private Integer age;   // 年龄
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    private String name;
+    private Integer age;
 }

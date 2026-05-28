@@ -4,6 +4,7 @@ import io.github.singlestructuretemplate.utils.JwtUtil;
 import io.github.singlestructuretemplate.utils.ThreadLocalUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -12,10 +13,10 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Map;
 
-@Component // 将此类交给 Spring 管理
+@Component
+@RequiredArgsConstructor
 public class LoginInterceptor implements HandlerInterceptor {
-    @Autowired// 依赖注入，这里注入了 Redis 模板，用于校验 Token
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override// 核心方法：在 Controller 的方法执行之前运行
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -25,15 +26,15 @@ public class LoginInterceptor implements HandlerInterceptor {
             ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();// 获取 Redis 操作对象
             String redisToken = operations.get(token);// 根据 Token 去 Redis 查是否存在
             if (redisToken==null){
-                throw new RuntimeException();// 如果 Redis 里没有这个 Token，说明未登录或过期，抛出异常
+                throw new RuntimeException();
             }
 
             Map<String,Object> claims = JwtUtil.parseToken(token);// 解析 Token 获取用户信息 (claims)
-            ThreadLocalUtil.set(claims);// 将用户信息存入 ThreadLocal，方便后续业务代码获取当前用户
-            return true;// 放行，返回 true 表示校验通过
+            ThreadLocalUtil.set(claims);
+            return true;
         }catch (Exception e){
-            response.setStatus(401); // 设置响应状态码为 401 (未授权)
-            return false;// 返回 false 表示拦截，请求到此为止，不会去 Controller
+            response.setStatus(401);
+            return false;
         }
     }
 
@@ -56,9 +57,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
 
 
-    // 收尾工作：在请求完成（包括页面渲染完毕）后执行，通常用于清理资源
     public void afterCompletion(HttpServletRequest request,HttpServletResponse response,Object handler,Exception ex) throws Exception{
-        //可以进行判断和特殊处理工作
-        ThreadLocalUtil.remove();// 清除 ThreadLocal 中的数据，防止内存泄漏
+        ThreadLocalUtil.remove();
     }
 }

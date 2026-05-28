@@ -1,42 +1,58 @@
 package io.github.singlestructuretemplate.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.singlestructuretemplate.mapper.ExampleMapper;
 import io.github.singlestructuretemplate.pojo.ExampleEntity;
+import io.github.singlestructuretemplate.pojo.PageResult;
 import io.github.singlestructuretemplate.service.ExampleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ExampleServiceImpl implements ExampleService {
-    // 依赖注入 (DI)：把刚才写的 Mapper 自动注入进来
-    @Autowired
-    private ExampleMapper exampleMapper;
+    private final ExampleMapper exampleMapper;
 
-    @Override //添加
+    @Override
     public int addExample(ExampleEntity example) {
-        // 这里可以写业务逻辑，比如判断 example.getName() 是否为空，为空抛出异常
         return exampleMapper.insert(example);
     }
-    @Override //删除
+    @Override
     public int removeById(Long id) {
         return exampleMapper.deleteById(id);
     }
-    @Override //修改
+    @Override
     public int modifyExample(ExampleEntity example) {
-        return exampleMapper.update(example);
-    }
-    @Override //id查询
+        return exampleMapper.updateById(example);
+    } // 没传的字段不改
+    @Override
     public ExampleEntity getById(Long id) {
         return exampleMapper.selectById(id);
     }
-    @Override //查询全部
+    @Override
     public List<ExampleEntity> getAll() {
-        return exampleMapper.selectAll();
+        return exampleMapper.selectList(null);
     }
-    @Override //条件查询
-    public List<ExampleEntity> getByNameAndAge(String name, Integer age) {
-        return exampleMapper.selectByNameAndAge(name, age);
+
+    @Override
+    public PageResult<ExampleEntity> getByPage(long pageCurrent,long pageSize) {
+        IPage<ExampleEntity> page = new Page(pageCurrent,pageSize);
+        exampleMapper.selectPage(page,null);
+        return PageResult.Setter(page);
     }
+
+    @Override
+    public List<ExampleEntity> getRequired(Integer minAge,Integer maxAge) {
+        LambdaQueryWrapper<ExampleEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.ge(null != minAge,ExampleEntity::getAge,minAge);
+        lqw.le(null != maxAge,ExampleEntity::getAge,maxAge);
+        List<ExampleEntity> lists = exampleMapper.selectList(lqw);
+        return lists;
+    }
+
+
 }
