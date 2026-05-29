@@ -9,7 +9,7 @@ public class ThreadLocalUtil {
     }
 
     //提供ThreadLocal对象,
-    private static final ThreadLocal THREAD_LOCAL = new ThreadLocal();
+    private static final ThreadLocal<Object> THREAD_LOCAL = new ThreadLocal<>();
 
     //根据键获取值
     public static <T> T get(){

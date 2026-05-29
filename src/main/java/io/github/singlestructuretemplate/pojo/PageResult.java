@@ -13,7 +13,7 @@ public class PageResult<T> {
     private long size; //每页大小
     private long pages; //总页数
 
-    public static <T> PageResult<T> Setter(IPage page){
+    public static <T> PageResult<T> of(IPage page){
         PageResult<T> result = new PageResult<>();
         result.setList(page.getRecords());
         result.setTotal(page.getTotal());

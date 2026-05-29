@@ -26,7 +26,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <!--    以下通用管理中间件版本型号-->
-        <spring-boot.version>3.2.5</spring-boot.version><!--依赖传递，spring-cloud依赖spring-boot，不用再指定spring-boot版本，指定的话要求兼容版本-->
+        <spring-boot.version>3.4.5</spring-boot.version><!--依赖传递，spring-cloud依赖spring-boot，不用再指定spring-boot版本，指定的话要求兼容版本-->
         <mybatis-plus-boot-starter.version>3.5.7</mybatis-plus-boot-starter.version> <!--mybatis-plus依赖-->
     </properties>
 
