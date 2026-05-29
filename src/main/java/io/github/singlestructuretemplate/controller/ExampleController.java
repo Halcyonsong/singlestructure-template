@@ -1,15 +1,17 @@
 package io.github.singlestructuretemplate.controller;
 
+import io.github.singlestructuretemplate.pojo.ExampleDTO;
 import io.github.singlestructuretemplate.pojo.PageResult;
 import io.github.singlestructuretemplate.pojo.Result;
 import io.github.singlestructuretemplate.pojo.ExampleEntity;
 import io.github.singlestructuretemplate.service.ExampleService;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+import java.util.Map;
 
 
 @RestController //@RestController = @Controller + @ResponseBody (代表此类所有接口均返回 JSON 格式数据)
@@ -21,8 +23,8 @@ public class ExampleController {
     private final ExampleService exampleService;
 
     @PostMapping("/add")
-    public Result<Void> add(@Validated @RequestBody ExampleEntity entity) {
-        exampleService.addExample(entity);
+    public Result<Void> add(@Validated @RequestBody ExampleDTO exampleDTO) {
+        exampleService.addExample(exampleDTO);
         return Result.success();
     }
 
@@ -33,8 +35,8 @@ public class ExampleController {
     }
 
     @PutMapping("/update")
-    public Result<Void> update(@Validated @RequestBody ExampleEntity entity) {
-        exampleService.modifyExample(entity);
+    public Result<Void> update(@Validated @RequestBody ExampleDTO exampleDTO) {
+        exampleService.modifyExample(exampleDTO);
         return Result.success();
     }
 
@@ -61,6 +63,17 @@ public class ExampleController {
     public Result<List<ExampleEntity>> getRequired(Integer minAge,Integer maxAge){
         List<ExampleEntity> lists = exampleService.getRequired(minAge,maxAge);
         return Result.success(lists);
+    }
+
+    @PostMapping("/register")
+    public Result register(@RequestBody @Validated ExampleDTO exampleDTO){
+        exampleService.register(exampleDTO);
+        return Result.success("注册成功");
+    }
+
+    @PostMapping("/login")
+    public Result<String> login(@RequestBody @Validated ExampleDTO exampleDTO){
+        return exampleService.login(exampleDTO);
     }
 
 }

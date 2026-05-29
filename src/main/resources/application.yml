@@ -5,8 +5,11 @@ server:
   port: 8080 # 定义当前服务的端口号
 
 spring:
-  application:
-    name: submodule-1 # 定义微服务名称 (注册到 Nacos 时要用)
+#  application:
+#    name: submodule-1 # 定义微服务名称 (注册到 Nacos 时要用)
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 
   profiles:
     # 【核心配置】组合其他子配置文件

@@ -27,7 +27,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <!--    以下通用管理中间件版本型号-->
         <spring-boot.version>3.2.5</spring-boot.version><!--依赖传递，spring-cloud依赖spring-boot，不用再指定spring-boot版本，指定的话要求兼容版本-->
-        <mybatis-plus-boot-starter.version>3.4.1</mybatis-plus-boot-starter.version> <!--mybatis-plus依赖-->
+        <mybatis-plus-boot-starter.version>3.5.7</mybatis-plus-boot-starter.version> <!--mybatis-plus依赖-->
     </properties>
 
     <!--  只统一锁定版本，不强制引入-->
@@ -61,10 +61,15 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <!-- 引入 MyBatisPlus -->
+        <!-- 引入 MyBatisPlus spring boot3以上不兼容，要手动覆盖 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>3.0.3</version>
         </dependency>
         <!-- 引入 MySQL 驱动，连数据库（版本同样可以在父工程管，或者直接靠 SpringBoot 的默认版本） -->
         <dependency>
@@ -96,6 +101,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
     </dependencies>
 
