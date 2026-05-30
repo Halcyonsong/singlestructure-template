@@ -2,7 +2,6 @@ package io.github.singlestructuretemplate.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.singlestructuretemplate.enums.ResultCodeEnum;
 import io.github.singlestructuretemplate.exception.BusinessException;
@@ -14,7 +13,6 @@ import io.github.singlestructuretemplate.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -22,12 +20,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -45,15 +41,14 @@ public class UserServiceImpl implements UserService {
         if (findEntityByName(userDTO.getName()) != null) {
             throw new BusinessException(400, "该用户名已被占用");
         }
-        UserEntity userEntity = new UserEntity();
-        String hash = passwordEncoder.encode(userDTO.getPassword());//BCrypt加密
-        userDTO.setPassword(hash);
-        BeanUtils.copyProperties(userDTO, userEntity);
+        UserEntity userEntity = ConvertUtils.convert(userDTO, UserEntity.class);
+        String hash = passwordEncoder.encode(userDTO.getPassword());
+        userEntity.setPassword(hash);
         try {
             userMapper.insert(userEntity);
         } catch (DuplicateKeyException e) {
             // 兜底处理：防止并发导致的数据库唯一键冲突
-            throw new BusinessException(400, "该用户名已被占用（并发冲突）");
+            throw new BusinessException(400, "该用户名已被占用");
         }
     }
 
@@ -67,8 +62,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void modifyUser(UserDTO userDTO) {
-        UserEntity userEntity = new UserEntity();
-        BeanUtils.copyProperties(userDTO, userEntity);
+        UserEntity userEntity = ConvertUtils.convert(userDTO, UserEntity.class);
+        if (userDTO.getPassword()!=null){
+            String hash = passwordEncoder.encode(userDTO.getPassword());
+            userEntity.setPassword(hash);
+        }
         int rows = userMapper.updateById(userEntity);
         if (rows == 0) {
             log.warn("更新用户受影响行数为0，ID: {}, DTO: {}", userDTO.getId(), userDTO);
@@ -140,20 +138,22 @@ public class UserServiceImpl implements UserService {
         if (existUser != null) {
             throw new BusinessException(400, "该用户名已被占用");
         }
-        String hash = passwordEncoder.encode(userDTO.getPassword());//BCrypt加密
-        userDTO.setPassword(hash);
-        UserEntity userEntity = new UserEntity();
-        BeanUtils.copyProperties(userDTO, userEntity);
-        userMapper.insert(userEntity);
+        UserEntity userEntity = ConvertUtils.convert(userDTO, UserEntity.class);
+        String hash = passwordEncoder.encode(userDTO.getPassword()); //BCrypt加密
+        userEntity.setPassword(hash);
+        try {
+            userMapper.insert(userEntity);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(400, "该用户名已被占用");
+        }
     }
-
 
     @Override
     public String login(LoginDTO loginDTO){
         String name = loginDTO.getName();
         String password = loginDTO.getPassword();
         UserEntity userEntity = findEntityByName(name);
-            if (userEntity ==null){
+        if (userEntity ==null){
             throw new BusinessException(ResultCodeEnum.NOT_FOUND.getCode(), "用户不存在");
         }
         if (!passwordEncoder.matches(password, userEntity.getPassword())){ //验证密码
