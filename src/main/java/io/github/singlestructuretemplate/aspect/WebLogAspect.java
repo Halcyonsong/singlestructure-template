@@ -20,14 +20,15 @@ import java.util.List;
 
 @Slf4j
 @Aspect      // 告诉 Spring 这是一个切面类
-@Component   // 交给 Spring 容器管理
+@Component
 @RequiredArgsConstructor
 public class WebLogAspect {
 
     private final ObjectMapper objectMapper;
+    private static final int MAX_LOG_LENGTH = 1000;
+
 
     // 定义切入点：拦截 controller 包下的所有类的所有方法！
-    // 【注意】把这里的 io.github.singlestructuretemplate 换成你实际的包名
     @Pointcut("execution(public * io.github.singlestructuretemplate.controller..*.*(..))")
     public void webLog() {
     }
@@ -54,19 +55,33 @@ public class WebLogAspect {
         for (Object arg : args) {
             if (arg instanceof HttpServletRequest || arg instanceof HttpServletResponse || arg instanceof MultipartFile) {
                 // 如果是特殊对象，只打印类型名称，不序列化它的内容
-                logArgs.add(arg.getClass().getSimpleName());
-            } else {
+                log.info("Skipping non-serializable arg: {}", arg.getClass().getSimpleName());
+                continue; // 直接跳过本次循环，不加入 logArgs
+            }
+            // 判断字符串长度，太长截断
+            if (arg instanceof String strArg) {
+                if (strArg.length() > MAX_LOG_LENGTH) {
+                    logArgs.add(strArg.substring(0, MAX_LOG_LENGTH) + "... [Truncated]");
+                } else {
+                    logArgs.add(strArg);
+                }
+            }
+            else {
                 logArgs.add(arg);
             }
         }
         // 打印过滤后的安全参数
         try {
-            log.info("Request Args   : {}", objectMapper.writeValueAsString(logArgs));
+            String argsJson = objectMapper.writeValueAsString(logArgs);
+            // 【核心修改】如果太长，就截断
+            if (argsJson.length() > MAX_LOG_LENGTH) {
+                argsJson = argsJson.substring(0, MAX_LOG_LENGTH) + "... [Truncated]";
+            }
+            log.info("Request Args   : {}", argsJson);
         } catch (Exception e) {
             log.warn("Request Args   : [参数无法序列化为JSON]");
         }
 
-        // 3. 【极其重要】放行，去执行你真正 Controller 里的业务代码
         Object result = joinPoint.proceed();
 
         // 打印响应结果（如果结果为 null，防止序列化报错）

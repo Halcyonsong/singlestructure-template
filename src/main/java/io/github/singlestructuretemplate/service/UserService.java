@@ -1,10 +1,7 @@
 package io.github.singlestructuretemplate.service;
 
 
-import io.github.singlestructuretemplate.pojo.LoginDTO;
-import io.github.singlestructuretemplate.pojo.UserDTO;
-import io.github.singlestructuretemplate.pojo.UserEntity;
-import io.github.singlestructuretemplate.pojo.PageResult;
+import io.github.singlestructuretemplate.pojo.*;
 
 import java.util.List;
 
@@ -12,16 +9,16 @@ public interface UserService {
     void addUser(UserDTO userDTO);
     void removeById(Long id);
     void modifyUser(UserDTO example);
-    UserEntity getById(Long id);
-    List<UserEntity> getAll();
+    UserVO getById(Long id);
+    List<UserVO> getAll();
 
-    PageResult<UserEntity> getByPage(long pageCurrent, long pageSize);
+    PageResult<UserVO> getByPage(long pageCurrent, long pageSize);
 
-    List<UserEntity> getRequired(Integer minAge, Integer maxAge);
+    List<UserVO> getRequired(Integer minAge, Integer maxAge);
 
-    List<UserEntity> getPart();
+    List<UserVO> getPart();
 
-    UserEntity getByName(String name);
+    UserVO getByName(String name);
 
     void register(UserDTO userDTO);
 

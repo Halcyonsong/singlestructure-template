@@ -38,27 +38,27 @@ public class UserController {
     }
 
     @GetMapping("/get")
-    public Result<UserEntity> getById(@RequestParam("id") Long id) {
-        UserEntity data = userService.getById(id);
+    public Result<UserVO> getById(@RequestParam("id") Long id) {
+        UserVO data = userService.getById(id);
         return Result.success(data);
     }
 
     @GetMapping("/list")
-    public Result<List<UserEntity>> getAll() {
-        List<UserEntity> list = userService.getAll();
+    public Result<List<UserVO>> getAll() {
+        List<UserVO> list = userService.getAll();
         return Result.success(list);
     }
 
     @GetMapping("/getByPage")
-    public Result<PageResult<UserEntity>> getByPage(@RequestParam(defaultValue = "1") long pageCurrent,
+    public Result<PageResult<UserVO>> getByPage(@RequestParam(defaultValue = "1") long pageCurrent,
                                                     @RequestParam(defaultValue = "3") long pageSize){
-        PageResult<UserEntity> byPage = userService.getByPage(pageCurrent, pageSize);
+        PageResult<UserVO> byPage = userService.getByPage(pageCurrent, pageSize);
         return Result.success(byPage);
     }
 
     @GetMapping("/getRequired")
-    public Result<List<UserEntity>> getRequired(Integer minAge, Integer maxAge){
-        List<UserEntity> lists = userService.getRequired(minAge,maxAge);
+    public Result<List<UserVO>> getRequired(Integer minAge, Integer maxAge){
+        List<UserVO> lists = userService.getRequired(minAge,maxAge);
         return Result.success(lists);
     }
 

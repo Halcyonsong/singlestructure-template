@@ -14,7 +14,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = false)
 public class UserDTO {
     @NotNull(message = "修改操作 ID 不能为空", groups = UpdateGroup.class)// 分组校验
-    private long id;
+    private Long id;
     @NotBlank(message = "用户名不能为空")
     @Size(min = 5, max = 16, message = "用户名长度必须在5-16位之间")
     private String name;

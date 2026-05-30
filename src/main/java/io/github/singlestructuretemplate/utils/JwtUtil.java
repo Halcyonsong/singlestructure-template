@@ -20,10 +20,8 @@ public class JwtUtil {
         JwtUtil.KEY = secret;
     }
 
-    // 把 yml 里的小时数读进来，直接换算成毫秒
     @Value("${jwt.expire-hours}")
     public void setExpireMillis(Integer expireHours) {
-        // 小时 * 60分钟 * 60秒 * 1000毫秒 (注意加 L 防止数值太大导致 Integer 溢出)
         JwtUtil.EXPIRE_MILLIS = expireHours * 60L * 60L * 1000L;
     }
 
@@ -31,7 +29,6 @@ public class JwtUtil {
     public static String genToken(Map<String, Object> claims) {
         return JWT.create()
                 .withClaim("claims", claims)
-                // 这里彻底告别硬编码！直接使用配置换算好的毫秒数
                 .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRE_MILLIS))
                 .sign(Algorithm.HMAC256(KEY));
     }

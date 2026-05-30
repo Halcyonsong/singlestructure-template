@@ -2,29 +2,32 @@ package io.github.singlestructuretemplate.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.singlestructuretemplate.enums.ResultCodeEnum;
 import io.github.singlestructuretemplate.exception.BusinessException;
 import io.github.singlestructuretemplate.mapper.UserMapper;
-import io.github.singlestructuretemplate.pojo.LoginDTO;
-import io.github.singlestructuretemplate.pojo.UserDTO;
-import io.github.singlestructuretemplate.pojo.UserEntity;
-import io.github.singlestructuretemplate.pojo.PageResult;
+import io.github.singlestructuretemplate.pojo.*;
 import io.github.singlestructuretemplate.service.UserService;
+import io.github.singlestructuretemplate.utils.ConvertUtils;
 import io.github.singlestructuretemplate.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,10 +40,21 @@ public class UserServiceImpl implements UserService {
     private long tokenExpireTime;
 
     @Override
+    @Transactional
     public void addUser(UserDTO userDTO) {
+        if (findEntityByName(userDTO.getName()) != null) {
+            throw new BusinessException(400, "该用户名已被占用");
+        }
         UserEntity userEntity = new UserEntity();
+        String hash = passwordEncoder.encode(userDTO.getPassword());//BCrypt加密
+        userDTO.setPassword(hash);
         BeanUtils.copyProperties(userDTO, userEntity);
-        userMapper.insert(userEntity);
+        try {
+            userMapper.insert(userEntity);
+        } catch (DuplicateKeyException e) {
+            // 兜底处理：防止并发导致的数据库唯一键冲突
+            throw new BusinessException(400, "该用户名已被占用（并发冲突）");
+        }
     }
 
     @Override
@@ -54,6 +68,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void modifyUser(UserDTO userDTO) {
         UserEntity userEntity = new UserEntity();
+        BeanUtils.copyProperties(userDTO, userEntity);
         int rows = userMapper.updateById(userEntity);
         if (rows == 0) {
             log.warn("更新用户受影响行数为0，ID: {}, DTO: {}", userDTO.getId(), userDTO);
@@ -62,54 +77,66 @@ public class UserServiceImpl implements UserService {
     } // 没传的字段不改
 
     @Override
-    public UserEntity getById(Long id) {
-        UserEntity user = userMapper.selectById(id);
-        if (user == null) {
+    public UserVO getById(Long id) {
+        UserEntity userEntity = userMapper.selectById(id);
+        if (userEntity == null) {
             throw new BusinessException(ResultCodeEnum.NOT_FOUND.getCode(),"用户不存在,操作失败");
         }
-        return user;
+        return ConvertUtils.convert(userEntity, UserVO.class);
     }
 
     @Override
-    public List<UserEntity> getAll() {
-        return userMapper.selectList(null);
+    public List<UserVO> getAll() {
+        List<UserEntity> userEntities = userMapper.selectList(null);
+        return ConvertUtils.convertList(userEntities, UserVO.class);
     }
 
     @Override
-    public PageResult<UserEntity> getByPage(long pageCurrent, long pageSize) {
-        IPage<UserEntity> page = new Page<>(pageCurrent,pageSize);
-        userMapper.selectPage(page,null);
-        return PageResult.of(page);
+    public PageResult<UserVO> getByPage(long pageCurrent, long pageSize) {
+        IPage<UserEntity> pageParam = new Page<>(pageCurrent,pageSize);
+        userMapper.selectPage(pageParam,null);
+        IPage<UserVO> voPage = new Page<>(pageParam.getCurrent(), pageParam.getSize(), pageParam.getTotal());
+        // 单独转换 records 列表（Entity -> VO）
+        voPage.setRecords(ConvertUtils.convertList(pageParam.getRecords(), UserVO.class));
+        return PageResult.of(voPage);
     }
 
     @Override
-    public List<UserEntity> getRequired(Integer minAge, Integer maxAge) {
+    public List<UserVO> getRequired(Integer minAge, Integer maxAge) {
         LambdaQueryWrapper<UserEntity> lqw = new LambdaQueryWrapper<>();
         lqw.ge(null != minAge, UserEntity::getAge,minAge);
         lqw.le(null != maxAge, UserEntity::getAge,maxAge);
-        List<UserEntity> lists = userMapper.selectList(lqw);
-        return lists;
+        List<UserEntity> userEntities = userMapper.selectList(lqw);
+        return ConvertUtils.convertList(userEntities, UserVO.class);
     }
 
     @Override
-    public List<UserEntity> getPart() {
+    public List<UserVO> getPart() {
         LambdaQueryWrapper<UserEntity> lqw = new LambdaQueryWrapper<>();
         lqw.select(UserEntity::getName, UserEntity::getAge); //没写的获取为null
-        List<UserEntity> lists = userMapper.selectList(lqw);
-        return lists;
+        List<UserEntity> userEntities = userMapper.selectList(lqw);
+        return ConvertUtils.convertList(userEntities, UserVO.class);
     }
 
     @Override
-    public UserEntity getByName(String name){
+    public UserVO getByName(String name){
         LambdaQueryWrapper<UserEntity> lambdaWrapper = new LambdaQueryWrapper<>();
         lambdaWrapper.eq(UserEntity::getName, name);
         UserEntity userEntity = userMapper.selectOne(lambdaWrapper);
-        return userEntity;
+        return ConvertUtils.convert(userEntity, UserVO.class);
     }
+
+    // 内部使用，返回 Entity（含 password）
+    private UserEntity findEntityByName(String name) {
+        LambdaQueryWrapper<UserEntity> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(UserEntity::getName, name);
+        return userMapper.selectOne(lqw);
+    }
+
 
     @Override
     public void register(UserDTO userDTO) {
-        UserEntity existUser = getByName(userDTO.getName());
+        UserEntity existUser = findEntityByName(userDTO.getName());
         if (existUser != null) {
             throw new BusinessException(400, "该用户名已被占用");
         }
@@ -125,9 +152,9 @@ public class UserServiceImpl implements UserService {
     public String login(LoginDTO loginDTO){
         String name = loginDTO.getName();
         String password = loginDTO.getPassword();
-        UserEntity userEntity = getByName(name);
-        if (userEntity ==null){
-            throw new BusinessException(400, "用户不存在");
+        UserEntity userEntity = findEntityByName(name);
+            if (userEntity ==null){
+            throw new BusinessException(ResultCodeEnum.NOT_FOUND.getCode(), "用户不存在");
         }
         if (!passwordEncoder.matches(password, userEntity.getPassword())){ //验证密码
             throw new BusinessException(ResultCodeEnum.UNAUTHORIZED.getCode(),"密码错误");
