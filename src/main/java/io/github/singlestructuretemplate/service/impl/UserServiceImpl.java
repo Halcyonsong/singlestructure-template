@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
     @Value("${jwt.expire-hours}")
     private long tokenExpireTime;
 
@@ -162,7 +163,7 @@ public class UserServiceImpl implements UserService {
         Map<String,Object> claims = new HashMap<>();//创建一个 Map 集合，存入登录成功的用户关键信息
         claims.put("id", userEntity.getId());
         claims.put("name", userEntity.getName());
-        String token = JwtUtil.genToken(claims);//调用工具类生成加密字符串（Token）
+        String token = jwtUtil.genToken(claims);//调用工具类生成加密字符串（Token）
 
         ValueOperations<String, String> operations = stringRedisTemplate.opsForValue();//从 Redis 模板中获取专门操作字符串（String）类型的对象
         operations.set(token,token,tokenExpireTime, TimeUnit.HOURS);//实际存入,key为token,value为token（占位即可，可以换），设置有效期1小时

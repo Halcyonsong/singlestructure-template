@@ -21,6 +21,7 @@ import java.util.Map;
 public class LoginInterceptor implements HandlerInterceptor {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
+    private final JwtUtil jwtUtil;
 
     @Override// 核心方法：在 Controller 的方法执行之前运行
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -37,7 +38,7 @@ public class LoginInterceptor implements HandlerInterceptor {
                 returnAuthError(response, "请先登录");
                 return false;
             }
-            Map<String, Object> claims = JwtUtil.parseToken(token);
+            Map<String, Object> claims = jwtUtil.parseToken(token);
             ThreadLocalUtil.set(claims);
             return true;
         } catch (Exception e) {
